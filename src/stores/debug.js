@@ -1,8 +1,8 @@
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { defineStore } from "pinia";
 
 export const useDebugStore = defineStore("debug", () => {
-  const isActive = computed(()=> );
+  const isDebugActive = ref(false);
 
-  return { isActive };
+  return { isDebugActive };
 });
