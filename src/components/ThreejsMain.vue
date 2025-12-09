@@ -21,7 +21,8 @@ let camera: THREE.PerspectiveCamera;
 let scene: THREE.Scene;
 let controls: OrbitControls;
 
-let cube: THREE.Mesh;
+let material: THREE.ShaderMaterial | null = null;
+let cube: THREE.Mesh<THREE.BoxGeometry, THREE.ShaderMaterial>;
 
 const init = () => {
   if (!threeRef.value) return;
@@ -43,9 +44,9 @@ const init = () => {
 
 const setupModel = () => {
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.ShaderMaterial({
+  material = new THREE.ShaderMaterial({
     uniforms: {
-      uTime: { value: null },
+      uTime: { value: 0 },
       uResolution: { value: resolution },
     },
     vertexShader: testVertex,
@@ -62,6 +63,8 @@ const animate = () => {
 
   cube.rotation.x += 0.01;
   cube.rotation.y += 0.01;
+
+  if (material) material.uniforms.uTime!.value = time;
 
   renderer.render(scene, camera);
 };
