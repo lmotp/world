@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import DebugPanel from "@/components/DebugPanel.vue";
+import ThreejsMain from "@/components/ThreejsMain.vue";
 </script>
 
 <template>
   <DebugPanel />
-  <div>안녕하세요</div>
+  <ThreejsMain />
 </template>
 
 <style scoped></style>

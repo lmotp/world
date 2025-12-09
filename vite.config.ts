@@ -1,14 +1,15 @@
-// vite.config.js
+// vite.config.ts
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import path from "path"; // Node.js 내장 path 모듈
+import path from "path";
+import glsl from "vite-plugin-glsl";
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), glsl()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"), // '@'를 src 폴더로 매핑
-      "~": path.resolve(__dirname, "./"), // 루트 디렉토리로 매핑 (선택)
+      "@": path.resolve(__dirname, "./src"),
+      "~": path.resolve(__dirname, "./"),
     },
   },
 });

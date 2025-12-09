@@ -4,8 +4,6 @@ import { Pane } from "tweakpane";
 const pane = new Pane();
 </script>
 
-<template>
-  <div>패널입니다</div>
-</template>
+<template></template>
 
 <style scoped></style>
