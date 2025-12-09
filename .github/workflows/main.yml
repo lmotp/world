@@ -1,0 +1,60 @@
+name: Deploy # Workflow 이름
+
+on: # main 브랜치에 푸시할 때 트리거됨
+  push:
+    branches:
+      - main
+
+jobs:
+  build: # 첫 번째 작업: 빌드
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo # 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Setup Node # Node.js 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.11.1"
+
+      - name: Install dependencies # 패키지 설치
+        run: npm install
+
+      - name: Print working directory # 현재 작업 디렉토리 출력
+        run: pwd
+
+      - name: List project files before build # 빌드 전 파일 구조 확인
+        run: ls -al
+
+      - name: Build project # 프로젝트 빌드
+        run: npm run build
+
+      - name: List build files # 빌드 후 파일 확인
+        run: ls -al ./dist
+
+      - name: Upload production-ready build files # 빌드된 파일 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-files
+          path: ./dist
+
+  deploy: # 두 번째 작업: 배포
+    name: Deploy
+    needs: build # build 작업이 완료되어야 실행됨
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # 브랜치 확인
+
+    steps:
+      - name: Download artifact # 빌드된 파일 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: production-files
+          path: ./dist
+
+      - name: Deploy to GitHub Pages # GitHub Pages로 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
