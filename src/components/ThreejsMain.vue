@@ -4,25 +4,27 @@ import { nextTick, onMounted, ref } from "vue";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import testFragment from "@/shader/testFragment.glsl";
-import testVertex from "@/shader/testVertex.glsl";
+import useCamera from "@/composables/useCamera";
+import useLight from "@/composables/useLight";
+import useGrass from "@/composables/useGrass";
 
 const threeRef = ref(null);
 
-const clock = new THREE.Clock();
 const width = window.innerWidth;
 const height = window.innerHeight;
 const dpi = Math.min(window.devicePixelRatio, 2);
 const aspect = width / height;
-const resolution = new THREE.Vector2(width * dpi, height * dpi);
+// const resolution = new THREE.Vector2(width * dpi, height * dpi);
+// const clock = new THREE.Clock();
+let time = 0;
+
+const materials: any[] = [];
 
 let renderer: THREE.WebGLRenderer;
-let camera: THREE.PerspectiveCamera;
 let scene: THREE.Scene;
+let light: THREE.DirectionalLight;
+let camera: THREE.PerspectiveCamera;
 let controls: OrbitControls;
-
-let material: THREE.ShaderMaterial | null = null;
-let cube: THREE.Mesh<THREE.BoxGeometry, THREE.ShaderMaterial>;
 
 const init = () => {
   if (!threeRef.value) return;
@@ -32,39 +34,36 @@ const init = () => {
   renderer.setPixelRatio(dpi);
   renderer.setAnimationLoop(animate);
 
-  camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-  camera.position.set(0, 0, 5);
-
   scene = new THREE.Scene();
+  scene.background = new THREE.Color(0.7, 0.8, 1.0);
+
+  const cameraConfig = useCamera(aspect);
+  camera = cameraConfig.camera;
+
+  const lightConfig = useLight();
+  light = lightConfig.light;
+  scene.add(light);
 
   controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0);
+  controls.update();
 
-  setupModel();
+  const { sky, skyMat, groundMat, plane } = useGrass();
+  materials.push(groundMat, skyMat);
+  scene.add(plane, sky);
 };
 
-const setupModel = () => {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  material = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uResolution: { value: resolution },
-    },
-    vertexShader: testVertex,
-    fragmentShader: testFragment,
-  });
-  cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
-};
-
-const animate = () => {
-  const time = clock.getDelta();
+const animate = (timeElapsed: number) => {
+  const timeElapsedS = timeElapsed * 0.001;
+  time += timeElapsedS;
 
   controls.update();
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-
-  if (material) material.uniforms.uTime!.value = time;
+  if (materials.length) {
+    materials.forEach((m) => {
+      m.uniforms.time.value = time;
+    });
+  }
 
   renderer.render(scene, camera);
 };
