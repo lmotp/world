@@ -7,14 +7,28 @@ import {
   Mesh,
   SphereGeometry,
   BackSide,
+  InstancedBufferGeometry,
+  Sphere,
+  Vector3,
+  Vector4,
+  FrontSide,
 } from "three";
 
 import vshSkyText from "@/shaders/grass/sky-vertex-shader.glsl";
 import fshSkyText from "@/shaders/grass/sky-fragment-shader.glsl";
 import vshGroundText from "@/shaders/grass/ground-vertex-shader.glsl";
 import fshGroundText from "@/shaders/grass/ground-fragment-shader.glsl";
+import vshGrassText from "@/shaders/grass/grass-vertex-shader.glsl";
+import fshGrassText from "@/shaders/grass/grass-fragment-shader.glsl";
 
 import grid from "@/assets/images/textures/grid.png";
+
+const NUM_GRASS = 16 * 1024;
+const GRASS_SEGMENTS = 6;
+// const GRASS_VERTICES = (GRASS_SEGMENTS + 1) * 2;
+const GRASS_PATCH_SIZE = 25;
+const GRASS_WIDTH = 0.25;
+const GRASS_HEIGHT = 2;
 
 const useGrass = (resolution: Vector2) => {
   const diffuseTexture = new TextureLoader().load(grid);
@@ -53,12 +67,61 @@ const useGrass = (resolution: Vector2) => {
   sky.castShadow = false;
   sky.receiveShadow = false;
 
+  const uniforms = {
+    grassParams: { value: new Vector4(GRASS_SEGMENTS, GRASS_PATCH_SIZE, GRASS_WIDTH, GRASS_HEIGHT) },
+    time: { value: 0 },
+    resolution: { value: resolution },
+  };
+  const grassMaterial = new ShaderMaterial({
+    uniforms,
+    vertexShader: vshGrassText,
+    fragmentShader: fshGrassText,
+    side: FrontSide,
+  });
+  const grassGeometry = createGeometry(GRASS_SEGMENTS);
+  const grass = new Mesh(grassGeometry, grassMaterial);
+  grass.position.set(0, 0, 0);
+
   return {
     sky,
     skyMat,
-    groundMat,
     plane,
+    groundMat,
+    grass,
+    grassMat: grassMaterial,
   };
+};
+
+const createGeometry = (segments: number) => {
+  const VERTICES = (segments + 1) * 2;
+  const indices = [];
+
+  for (let i = 0; i < segments; ++i) {
+    const vi = i * 2;
+    indices[i * 12 + 0] = vi + 0;
+    indices[i * 12 + 1] = vi + 1;
+    indices[i * 12 + 2] = vi + 2;
+
+    indices[i * 12 + 3] = vi + 2;
+    indices[i * 12 + 4] = vi + 1;
+    indices[i * 12 + 5] = vi + 3;
+
+    const fi = VERTICES + vi;
+    indices[i * 12 + 6] = fi + 2;
+    indices[i * 12 + 7] = fi + 1;
+    indices[i * 12 + 8] = fi + 0;
+
+    indices[i * 12 + 9] = fi + 3;
+    indices[i * 12 + 10] = fi + 1;
+    indices[i * 12 + 11] = fi + 2;
+  }
+
+  const geo = new InstancedBufferGeometry();
+  geo.instanceCount = NUM_GRASS;
+  geo.setIndex(indices);
+  geo.boundingSphere = new Sphere(new Vector3(0, 0, 0), 1 + GRASS_PATCH_SIZE * 2);
+
+  return geo;
 };
 
 export default useGrass;

@@ -15,8 +15,7 @@ const height = window.innerHeight;
 const dpi = Math.min(window.devicePixelRatio, 2);
 const aspect = width / height;
 const resolution = new THREE.Vector2(width * dpi, height * dpi);
-// const clock = new THREE.Clock();
-let time = 0;
+const clock = new THREE.Clock();
 
 const materials: any[] = [];
 
@@ -32,7 +31,6 @@ const init = () => {
   renderer = new THREE.WebGLRenderer({ canvas: threeRef.value, antialias: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(dpi);
-  renderer.setAnimationLoop(animate);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0.7, 0.8, 1.0);
@@ -48,20 +46,21 @@ const init = () => {
   controls.target.set(0, 0, 0);
   controls.update();
 
-  const { sky, skyMat, groundMat, plane } = useGrass(resolution);
-  materials.push(groundMat, skyMat);
-  scene.add(plane, sky);
+  const { sky, skyMat, plane, groundMat, grass, grassMat } = useGrass(resolution);
+  materials.push(groundMat, skyMat, grassMat);
+  scene.add(plane, sky, grass);
+
+  animate();
 };
 
-const animate = (timeElapsed: number) => {
-  const timeElapsedS = timeElapsed * 0.001;
-  time += timeElapsedS;
+const animate = () => {
+  requestAnimationFrame(animate);
 
   controls.update();
 
   if (materials.length) {
     materials.forEach((m) => {
-      m.uniforms.time.value = time;
+      m.uniforms.time.value = clock.getElapsedTime();
     });
   }
 
