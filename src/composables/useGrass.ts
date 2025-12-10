@@ -14,8 +14,10 @@ import fshSkyText from "@/shaders/grass/sky-fragment-shader.glsl";
 import vshGroundText from "@/shaders/grass/ground-vertex-shader.glsl";
 import fshGroundText from "@/shaders/grass/ground-fragment-shader.glsl";
 
-const useGrass = () => {
-  const diffuseTexture = new TextureLoader().load("@/assets/images/textures/grid.png");
+import grid from "@/assets/images/textures/grid.png";
+
+const useGrass = (resolution: Vector2) => {
+  const diffuseTexture = new TextureLoader().load(grid);
   diffuseTexture.wrapS = RepeatWrapping;
   diffuseTexture.wrapT = RepeatWrapping;
 
@@ -23,7 +25,7 @@ const useGrass = () => {
   const groundMat = new ShaderMaterial({
     uniforms: {
       time: { value: 0 },
-      resolution: { value: new Vector2(1, 1) },
+      resolution: { value: resolution },
       diffuseTexture: { value: diffuseTexture },
     },
     vertexShader: vshGroundText,
@@ -40,7 +42,7 @@ const useGrass = () => {
   const skyMat = new ShaderMaterial({
     uniforms: {
       time: { value: 0 },
-      resolution: { value: new Vector2(1, 1) },
+      resolution: { value: resolution },
     },
     vertexShader: vshSkyText,
     fragmentShader: fshSkyText,

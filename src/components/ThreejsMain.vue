@@ -14,7 +14,7 @@ const width = window.innerWidth;
 const height = window.innerHeight;
 const dpi = Math.min(window.devicePixelRatio, 2);
 const aspect = width / height;
-// const resolution = new THREE.Vector2(width * dpi, height * dpi);
+const resolution = new THREE.Vector2(width * dpi, height * dpi);
 // const clock = new THREE.Clock();
 let time = 0;
 
@@ -48,7 +48,7 @@ const init = () => {
   controls.target.set(0, 0, 0);
   controls.update();
 
-  const { sky, skyMat, groundMat, plane } = useGrass();
+  const { sky, skyMat, groundMat, plane } = useGrass(resolution);
   materials.push(groundMat, skyMat);
   scene.add(plane, sky);
 };
