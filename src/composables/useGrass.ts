@@ -14,6 +14,8 @@ import {
   FrontSide,
 } from "three";
 
+import TextureAtlas from "@/composables/useTextureAtlas";
+
 import vshSkyText from "@/shaders/grass/sky-vertex-shader.glsl";
 import fshSkyText from "@/shaders/grass/sky-fragment-shader.glsl";
 import vshGroundText from "@/shaders/grass/ground-vertex-shader.glsl";
@@ -22,11 +24,14 @@ import vshGrassText from "@/shaders/grass/grass-vertex-shader.glsl";
 import fshGrassText from "@/shaders/grass/grass-fragment-shader.glsl";
 
 import grid from "@/assets/images/textures/grid.png";
+import tileData from "@/assets/images/textures/tileData.jpg";
+import grass1 from "@/assets/images/textures/grass1.png";
+import grass2 from "@/assets/images/textures/grass2.png";
 
-const NUM_GRASS = 16 * 1024;
+const NUM_GRASS = 64 * 1024;
 const GRASS_SEGMENTS = 6;
 // const GRASS_VERTICES = (GRASS_SEGMENTS + 1) * 2;
-const GRASS_PATCH_SIZE = 25;
+const GRASS_PATCH_SIZE = 50;
 const GRASS_WIDTH = 0.25;
 const GRASS_HEIGHT = 2;
 
@@ -49,7 +54,7 @@ const useGrass = (resolution: Vector2) => {
   const geometry = new PlaneGeometry(1, 1, 512, 512);
   const plane = new Mesh(geometry, groundMat);
   plane.rotateX(-Math.PI / 2);
-  plane.scale.setScalar(10);
+  plane.scale.setScalar(500);
 
   // Make sky
   const skyGeo = new SphereGeometry(5000, 32, 15);
@@ -67,11 +72,22 @@ const useGrass = (resolution: Vector2) => {
   sky.castShadow = false;
   sky.receiveShadow = false;
 
+  // Grass
+  const tileDataTexture = new TextureLoader().load(tileData);
   const uniforms = {
     grassParams: { value: new Vector4(GRASS_SEGMENTS, GRASS_PATCH_SIZE, GRASS_WIDTH, GRASS_HEIGHT) },
     time: { value: 0 },
+    grassDiffuse: { value: null },
     resolution: { value: resolution },
+    tileDataTexture: { value: tileDataTexture },
   };
+
+  const diffuse = new TextureAtlas();
+  diffuse.Load("diffuse", [grass1, grass2]);
+  diffuse.onLoad = () => {
+    uniforms.grassDiffuse.value = diffuse.Info["diffuse"].atlas;
+  };
+
   const grassMaterial = new ShaderMaterial({
     uniforms,
     vertexShader: vshGrassText,

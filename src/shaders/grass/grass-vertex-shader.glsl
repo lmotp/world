@@ -1,5 +1,6 @@
 uniform vec4 grassParams;
 uniform float time;
+uniform sampler2D tileDataTexture;
 
 varying vec3 vColour;
 varying vec4 vGrassData;
@@ -92,6 +93,10 @@ float noise(in vec3 p) {
   return mix(mix(mix(dot(hash(i + vec3(0.0, 0.0, 0.0)), f - vec3(0.0, 0.0, 0.0)), dot(hash(i + vec3(1.0, 0.0, 0.0)), f - vec3(1.0, 0.0, 0.0)), u.x), mix(dot(hash(i + vec3(0.0, 1.0, 0.0)), f - vec3(0.0, 1.0, 0.0)), dot(hash(i + vec3(1.0, 1.0, 0.0)), f - vec3(1.0, 1.0, 0.0)), u.x), u.y), mix(mix(dot(hash(i + vec3(0.0, 0.0, 1.0)), f - vec3(0.0, 0.0, 1.0)), dot(hash(i + vec3(1.0, 0.0, 1.0)), f - vec3(1.0, 0.0, 1.0)), u.x), mix(dot(hash(i + vec3(0.0, 1.0, 1.0)), f - vec3(0.0, 1.0, 1.0)), dot(hash(i + vec3(1.0, 1.0, 1.0)), f - vec3(1.0, 1.0, 1.0)), u.x), u.y), u.z);
 }
 
+vec3 terrainHeight(vec3 worldPos) {
+  return vec3(worldPos.x, noise(worldPos * 0.02) * 10.0, worldPos.z);
+}
+
 const vec3 BASE_COLOUR = vec3(0.1, 0.4, 0.04);
 const vec3 TIP_COLOUR = vec3(0.5, 0.7, 0.3);
 
@@ -106,12 +111,22 @@ void main() {
   vec2 hashedInstanceId = hash21(float(gl_InstanceID)) * 2.0 - 1.0;
   vec3 grassOffset = vec3(hashedInstanceId.x, 0.0, hashedInstanceId.y) * GRASS_PATCH_SIZE;
 
+  grassOffset = terrainHeight(grassOffset);
+
   vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz;
   vec3 hashVal = hash(grassBladeWorldPos);
+
+  float grassType = saturate(hashVal.z) > 0.75 ? 1.0 : 0.0;
 
   // Grass rotation
   const float PI = 3.14159;
   float angle = remap(hashVal.x, -1.0, 1.0, -PI, PI);
+
+  vec4 tileData = texture2D(tileDataTexture, vec2(-grassBladeWorldPos.x, grassBladeWorldPos.z) / GRASS_PATCH_SIZE * 0.5 + 0.5);
+
+  // Stiffness
+  float stiffness = 1.0; // - tileData.x * 0.85;
+  float tileGrassHeight = (1.0 - tileData.x) * mix(1.0, 1.5, grassType);
 
   // Debug
   // grassOffset = vec3(float(gl_InstanceID) * 0.5 - 8.0, 0.0, 0.0);
@@ -128,9 +143,9 @@ void main() {
   float zSide = float(zTest);
   float heightPercent = float(vertID - xTest) / (float(GRASS_SEGMENTS) * 2.0);
 
-  float width = GRASS_WIDTH * easeOut(1.0 - heightPercent, 4.0);
+  float width = GRASS_WIDTH; // * easeOut(1.0 - heightPercent, 4.0) * tileGrassHeight;
   // float width = GRASS_WIDTH * smoothstep(0.0, 0.25, 1.0 - heightPercent);
-  float height = GRASS_HEIGHT;
+  float height = GRASS_HEIGHT * tileGrassHeight;
 
   // Calculate the vertex position
   float x = (xSide - 0.5) * width;
@@ -142,7 +157,7 @@ void main() {
   float windStrength = noise(vec3(grassBladeWorldPos.xz * 0.05, 0.0) + time);
   float windAngle = 0.0;
   vec3 windAxis = vec3(cos(windAngle), 0.0, sin(windAngle));
-  float windLeanAngle = windStrength * 1.5 * heightPercent;
+  float windLeanAngle = windStrength * 1.5 * heightPercent * stiffness;
 
   float randomLeanAnimation = noise(vec3(grassBladeWorldPos.xz, time * 4.0)) * (windStrength * 0.5 + 0.125);
 
@@ -176,10 +191,24 @@ void main() {
   grassLocalNormal = mix(grassLocalNormal, vec3(0.0, 1.0, 0.0), distanceBlend * 0.5);
   grassLocalNormal = normalize(grassLocalNormal);
 
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(grassLocalPosition, 1.0);
+  // Viewspace thicken
+  vec4 mvPosition = modelViewMatrix * vec4(grassLocalPosition, 1.0);
+  vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
+  vec3 grassFaceNormal = (grassMat * vec3(0.0, 0.0, -zSide));
+
+  float viewDotNoraml = saturate(dot(grassFaceNormal, viewDir));
+  float viewSpaceThickenFactor = easeOut(1.0 - viewDotNoraml, 4.0) * smoothstep(0.0, 0.2, viewDotNoraml);
+
+  mvPosition.x += viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
+
+  gl_Position = projectionMatrix * mvPosition;
+  gl_Position.w = tileGrassHeight < 0.25 ? 0.0 : gl_Position.w;
 
   // vColour = grassLocalNormal;
   vColour = mix(BASE_COLOUR, TIP_COLOUR, heightPercent);
+  vColour = mix(vec3(1.0, 0.0, 0.0), vColour, stiffness);
+  // vColour = vec3(viewSpaceThickenFactor);
+
   // vec3 c1 = mix(BASE_COLOUR, TIP_COLOUR, heightPercent);
   // vec3 c2 = mix(vec3(0.6, 0.6, 0.4), vec3(0.88, 0.87, 0.52), heightPercent);
   // float noiseValue = noise(grassBladeWorldPos * 0.1);
@@ -188,5 +217,5 @@ void main() {
   vNormal = normalize((modelViewMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;
 
-  vGrassData = vec4(x, 0.0, 0.0, 0.0);
+  vGrassData = vec4(x, heightPercent, xSide, grassType);
 }
