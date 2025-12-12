@@ -23,7 +23,7 @@ import fshGroundText from "@/shaders/grass/ground-fragment-shader.glsl";
 import vshGrassText from "@/shaders/grass/grass-vertex-shader.glsl";
 import fshGrassText from "@/shaders/grass/grass-fragment-shader.glsl";
 
-import grid from "@/assets/images/textures/grid.png";
+// import grid from "@/assets/images/textures/grid.png";
 import ground from "@/assets/images/textures/ground.webp";
 import tileData from "@/assets/images/textures/tileData.jpg";
 import grass1 from "@/assets/images/textures/grass1.png";

@@ -8,10 +8,18 @@ import useCamera from "@/composables/useCamera";
 import useLight from "@/composables/useLight";
 import useGrass from "@/composables/useGrass";
 import useWater from "@/composables/useWater";
+import useRock from "@/composables/useRock";
+import useTerrain from "@/composables/useTerrain";
 
-import useSetupModel from "@/composables/useSetupModel";
+// import useSetupModel from "@/composables/useSetupModel";
 
 const threeRef = ref(null);
+const waterOption = {
+  waterLevel: 0.9,
+  waveSpeed: 1.2,
+  waveAmplitude: 0.1,
+  foamDepth: 0.05,
+};
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -21,6 +29,7 @@ const resolution = new THREE.Vector2(width * dpi, height * dpi);
 const clock = new THREE.Clock();
 
 const materials: any[] = [];
+const waterMaterial: any[] = [];
 
 let renderer: THREE.WebGLRenderer;
 let scene: THREE.Scene;
@@ -30,9 +39,14 @@ let controls: OrbitControls;
 
 let water: THREE.Mesh;
 let waterMat: THREE.Material;
-let time = 0;
 
-const init = () => {
+let rock: THREE.Group;
+let rockMat: THREE.Material;
+
+let terrain: THREE.Group;
+let terrainMat: THREE.Material;
+
+const init = async () => {
   if (!threeRef.value) return;
 
   renderer = new THREE.WebGLRenderer({ canvas: threeRef.value, antialias: true });
@@ -55,14 +69,26 @@ const init = () => {
   controls.target.set(0, 0, 0);
   controls.update();
 
-  // const { sky, skyMat, plane, groundMat, grass, grassMat } = useGrass(resolution);
-  // materials.push(groundMat, skyMat); //grassMat
-  // scene.add(plane, sky); // grass
+  const { sky, skyMat, plane, groundMat, grass, grassMat } = useGrass(resolution);
+  materials.push(groundMat, skyMat, grassMat);
+  scene.add(plane, sky, grass);
 
-  const waterConfig = useWater(time);
-  water = waterConfig.water;
+  const waterConfig = useWater(waterOption);
   waterMat = waterConfig.waterMat;
+  water = waterConfig.water;
   scene.add(water);
+
+  const rockConfig = await useRock(waterOption);
+  rockMat = rockConfig.rockMat;
+  rock = rockConfig.rock;
+  scene.add(rock);
+
+  const terrainConfig = await useTerrain(waterOption);
+  terrainMat = terrainConfig.terrainMat;
+  terrain = terrainConfig.terrain;
+  scene.add(terrain);
+
+  waterMaterial.push(waterMat, rockMat, terrainMat);
 
   // useSetupModel(renderer, camera, scene);
   animate();
@@ -73,11 +99,12 @@ const animate = () => {
 
   controls.update();
 
-  if (waterMat) waterMat.uniforms.uTime.value = clock.getElapsedTime();
-
-  if (materials.length) {
+  if (materials.length && waterMaterial.length) {
     materials.forEach((m) => {
       m.uniforms.time.value = clock.getElapsedTime();
+    });
+    waterMaterial.forEach((m) => {
+      m.uniforms.uTime.value = clock.getElapsedTime();
     });
   }
 

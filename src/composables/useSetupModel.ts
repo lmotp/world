@@ -13,6 +13,7 @@ const useSetupModel = (renderer: any, camera: any, scene: any) => {
   loader.load(model, async (gltf) => {
     const model = gltf.scene;
     model.scale.setScalar(2.5);
+    model.position.y = 2.0;
 
     await renderer.compileAsync(model, camera, scene);
 
