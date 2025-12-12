@@ -7,6 +7,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import useCamera from "@/composables/useCamera";
 import useLight from "@/composables/useLight";
 import useGrass from "@/composables/useGrass";
+import useWater from "@/composables/useWater";
+
+import useSetupModel from "@/composables/useSetupModel";
 
 const threeRef = ref(null);
 
@@ -25,6 +28,10 @@ let light: THREE.DirectionalLight;
 let camera: THREE.PerspectiveCamera;
 let controls: OrbitControls;
 
+let water: THREE.Mesh;
+let waterMat: THREE.Material;
+let time = 0;
+
 const init = () => {
   if (!threeRef.value) return;
 
@@ -39,17 +46,25 @@ const init = () => {
   camera = cameraConfig.camera;
 
   const lightConfig = useLight();
+  const secondLight = lightConfig.secondLight;
+  const ambientLight = lightConfig.ambientLight;
   light = lightConfig.light;
-  scene.add(light);
+  scene.add(light, secondLight, ambientLight);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 0, 0);
   controls.update();
 
-  const { sky, skyMat, plane, groundMat, grass, grassMat } = useGrass(resolution);
-  materials.push(groundMat, skyMat, grassMat);
-  scene.add(plane, sky, grass);
+  // const { sky, skyMat, plane, groundMat, grass, grassMat } = useGrass(resolution);
+  // materials.push(groundMat, skyMat); //grassMat
+  // scene.add(plane, sky); // grass
 
+  const waterConfig = useWater(time);
+  water = waterConfig.water;
+  waterMat = waterConfig.waterMat;
+  scene.add(water);
+
+  // useSetupModel(renderer, camera, scene);
   animate();
 };
 
@@ -57,6 +72,8 @@ const animate = () => {
   requestAnimationFrame(animate);
 
   controls.update();
+
+  if (waterMat) waterMat.uniforms.uTime.value = clock.getElapsedTime();
 
   if (materials.length) {
     materials.forEach((m) => {

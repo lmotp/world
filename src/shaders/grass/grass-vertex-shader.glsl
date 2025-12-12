@@ -116,7 +116,7 @@ void main() {
   vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz;
   vec3 hashVal = hash(grassBladeWorldPos);
 
-  float grassType = saturate(hashVal.z) > 0.75 ? 1.0 : 0.0;
+  float grassType = saturate(hashVal.z) > 0.975 ? 1.0 : 0.0;
 
   // Grass rotation
   const float PI = 3.14159;
@@ -126,7 +126,7 @@ void main() {
 
   // Stiffness
   float stiffness = 1.0; // - tileData.x * 0.85;
-  float tileGrassHeight = (1.0 - tileData.x) * mix(1.0, 1.5, grassType);
+  float tileGrassHeight = mix(1.0, 1.5, grassType);
 
   // Debug
   // grassOffset = vec3(float(gl_InstanceID) * 0.5 - 8.0, 0.0, 0.0);

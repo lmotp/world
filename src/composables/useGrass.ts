@@ -24,19 +24,19 @@ import vshGrassText from "@/shaders/grass/grass-vertex-shader.glsl";
 import fshGrassText from "@/shaders/grass/grass-fragment-shader.glsl";
 
 import grid from "@/assets/images/textures/grid.png";
+import ground from "@/assets/images/textures/ground.webp";
 import tileData from "@/assets/images/textures/tileData.jpg";
 import grass1 from "@/assets/images/textures/grass1.png";
 import grass2 from "@/assets/images/textures/grass2.png";
 
 const NUM_GRASS = 64 * 1024;
 const GRASS_SEGMENTS = 6;
-// const GRASS_VERTICES = (GRASS_SEGMENTS + 1) * 2;
-const GRASS_PATCH_SIZE = 50;
+const GRASS_PATCH_SIZE = 25;
 const GRASS_WIDTH = 0.25;
-const GRASS_HEIGHT = 2;
+const GRASS_HEIGHT = 1.5;
 
 const useGrass = (resolution: Vector2) => {
-  const diffuseTexture = new TextureLoader().load(grid);
+  const diffuseTexture = new TextureLoader().load(ground);
   diffuseTexture.wrapS = RepeatWrapping;
   diffuseTexture.wrapT = RepeatWrapping;
 
@@ -54,7 +54,7 @@ const useGrass = (resolution: Vector2) => {
   const geometry = new PlaneGeometry(1, 1, 512, 512);
   const plane = new Mesh(geometry, groundMat);
   plane.rotateX(-Math.PI / 2);
-  plane.scale.setScalar(500);
+  plane.scale.setScalar(50);
 
   // Make sky
   const skyGeo = new SphereGeometry(5000, 32, 15);

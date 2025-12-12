@@ -7,6 +7,7 @@ import glsl from "vite-plugin-glsl";
 export default defineConfig({
   base: "/world/",
   plugins: [vue(), glsl()],
+  assetsInclude: ["**/*.glb"],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
